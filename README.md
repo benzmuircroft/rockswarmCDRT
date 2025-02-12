@@ -10,7 +10,9 @@
 - save with fs or levelDB
 
 # Goal: Only use Hyperswarm to share and fs to store the autobase!
-##RocksDB
+
+[](https://www.percona.com/blog/wp-content/uploads/2015/10/12.jpg)
+## RocksDB
 ```js
 const Automerge = require('automerge');
 const Hyperswarm = require('hyperswarm');
@@ -116,7 +118,8 @@ async function updateDocument(update) {
 })();
 
 ```
-##LevelDB
+
+## LevelDB
 ```js
 const Automerge = require('automerge');
 const Hyperswarm = require('hyperswarm');
