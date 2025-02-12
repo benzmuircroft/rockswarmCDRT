@@ -4,7 +4,7 @@
 - use rollup to convert ts to js in a single file
 - test with old / latest Hyperswarm over 2 devices
 - create two versions (old automerge / new automerge using node-fs instead of Hypercore)
-## OR:
+## OR, START FRESH:
 - use autobase
 - create a Hyperswarm messaging network for the updates to propigate
 - save with fs or levelDB
