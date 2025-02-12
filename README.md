@@ -11,6 +11,101 @@
 
 # Goal: Only use Hyperswarm to share and fs to store the autobase!
 
+```js
+const Automerge = require('automerge');
+const Hyperswarm = require('hyperswarm');
+const Level = require('level');
+const crypto = require('crypto');
+const fs = require('fs');
+
+// ==== CONFIGURATION ====
+// Use LevelDB for persistence
+const db = new Level('./automerge-db', { valueEncoding: 'json' });
+
+// Hard-coded topic hash for peer discovery
+const topic = Buffer.from('aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899', 'hex');
+
+// Initialize Hyperswarm for peer-to-peer communication
+const swarm = new Hyperswarm();
+swarm.join(topic, { lookup: true, announce: true });
+
+let doc = Automerge.init(); // Initialize an empty Automerge document
+
+// ==== LOAD OR CREATE DOCUMENT ====
+// Try to load existing state from LevelDB, otherwise start fresh
+async function loadDocument() {
+    try {
+        const savedState = await db.get('automerge-doc'); // Load the saved state from LevelDB
+        doc = Automerge.load(savedState);
+        console.log('Loaded document:', doc);
+    } catch (err) {
+        console.log('No saved state found, starting fresh.');
+    }
+}
+
+// ==== SAVE DOCUMENT TO LEVELDB ====
+// Periodically save the document state to LevelDB
+async function saveDocument() {
+    await db.put('automerge-doc', Automerge.save(doc));
+}
+
+// ==== HANDLE INCOMING PEER CONNECTIONS ====
+// When peers connect, synchronize changes
+swarm.on('connection', (socket) => {
+    console.log('Connected to a peer');
+
+    socket.on('data', (data) => {
+        try {
+            const changes = JSON.parse(data.toString());
+            const newDoc = Automerge.applyChanges(doc, changes);
+            
+            // Check if changes need to be saved
+            const docChanges = Automerge.getChanges(doc, newDoc);
+            if (docChanges.length > 0) {
+                doc = newDoc;
+                saveDocument();
+                console.log('Updated document:', doc);
+            }
+        } catch (err) {
+            console.error('Error applying changes:', err);
+        }
+    });
+});
+
+// ==== APPEND NEW DATA ====
+// Modify the document and broadcast changes
+async function updateDocument(update) {
+    let newDoc = Automerge.change(doc, (d) => {
+        d.entries = d.entries || [];
+        d.entries.push(update);
+    });
+
+    // Check for changes before saving
+    const changes = Automerge.getChanges(doc, newDoc);
+    if (changes.length > 0) {
+        doc = newDoc;
+        await saveDocument();
+
+        // Broadcast changes to all connected peers
+        const msg = JSON.stringify(changes);
+        swarm.connections.forEach(conn => {
+            conn.write(msg);  // Broadcast to all peers
+        });
+
+        console.log('Appended update:', update);
+    }
+}
+
+// ==== TESTING ====
+// Load document, then append a test entry
+(async () => {
+    await loadDocument();
+    setTimeout(() => updateDocument({ user: 'Ben', action: 'Testing', timestamp: Date.now() }), 2000);
+})();
+
+
+```
+
 > **Warning**
 > Hypermerge is deprecated.
 > This library is no longer maintained and uses an ancient and slow version of Automerge.
