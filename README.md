@@ -1,5 +1,11 @@
 # Hypermerge ("hyperswarm": "^2.3.1")
 
+## TODO:
+- use rollup to convert ts to js in a single file
+- test with latest Hyperswarm over 2 devices
+- create two versions (old automerge/ new automerge)
+  
+
 > **Warning**
 > Hypermerge is deprecated.
 > This library is no longer maintained and uses an ancient and slow version of Automerge.
