@@ -3,8 +3,9 @@
 ## TODO:
 - use rollup to convert ts to js in a single file
 - test with old / latest Hyperswarm over 2 devices
-- create two versions (old automerge / new automerge)
-  
+- create two versions (old automerge / new automerge using node-fs instead of Hypercore)
+
+# Goal: Only use Hyperswarm to share and fs to store the autobase!
 
 > **Warning**
 > Hypermerge is deprecated.
