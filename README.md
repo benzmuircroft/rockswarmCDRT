@@ -1,4 +1,4 @@
-# Hypermerge
+# Hypermerge ("hyperswarm": "^2.3.1")
 
 > **Warning**
 > Hypermerge is deprecated.
