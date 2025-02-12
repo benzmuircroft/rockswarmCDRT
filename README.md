@@ -23,6 +23,7 @@ const fs = require('fs');
 const db = new Level('./automerge-db', { valueEncoding: 'json' });
 
 // Hard-coded topic hash for peer discovery
+// const topic = crypto.createHash('sha256').update('automerge-shared-doc').digest(); // soft-coded
 const topic = Buffer.from('aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899', 'hex');
 
 // Initialize Hyperswarm for peer-to-peer communication
