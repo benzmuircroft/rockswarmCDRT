@@ -2,8 +2,8 @@
 
 ## TODO:
 - use rollup to convert ts to js in a single file
-- test with latest Hyperswarm over 2 devices
-- create two versions (old automerge/ new automerge)
+- test with old / latest Hyperswarm over 2 devices
+- create two versions (old automerge / new automerge)
   
 
 > **Warning**
