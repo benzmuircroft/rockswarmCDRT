@@ -10,7 +10,113 @@
 - save with fs or levelDB
 
 # Goal: Only use Hyperswarm to share and fs to store the autobase!
+##RocksDB
+```js
+const Automerge = require('automerge');
+const Hyperswarm = require('hyperswarm');
+const RocksDB = require('rocksdb');
+const crypto = require('crypto');
+const fs = require('fs');
 
+// ==== CONFIGURATION ====
+// Use RocksDB for persistence
+const db = new RocksDB('./automerge-db'); // Open a RocksDB instance
+
+// Hard-coded topic hash for peer discovery
+const topic = Buffer.from('aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899', 'hex');
+
+// Initialize Hyperswarm for peer-to-peer communication
+const swarm = new Hyperswarm();
+swarm.join(topic, { lookup: true, announce: true });
+
+let doc = Automerge.init(); // Initialize an empty Automerge document
+
+// ==== LOAD OR CREATE DOCUMENT ====
+// Try to load existing state from RocksDB, otherwise start fresh
+async function loadDocument() {
+    try {
+        db.get('automerge-doc', (err, savedState) => {
+            if (err) {
+                console.log('No saved state found, starting fresh.');
+            } else {
+                doc = Automerge.load(savedState.toString());
+                console.log('Loaded document:', doc);
+            }
+        });
+    } catch (err) {
+        console.error('Error loading document:', err);
+    }
+}
+
+// ==== SAVE DOCUMENT TO ROCKSDB ====
+// Periodically save the document state to RocksDB
+async function saveDocument() {
+    try {
+        const docState = Automerge.save(doc);
+        db.put('automerge-doc', docState, (err) => {
+            if (err) console.error('Error saving document:', err);
+        });
+    } catch (err) {
+        console.error('Error saving document:', err);
+    }
+}
+
+// ==== HANDLE INCOMING PEER CONNECTIONS ====
+// When peers connect, synchronize changes
+swarm.on('connection', (socket) => {
+    console.log('Connected to a peer');
+
+    socket.on('data', (data) => {
+        try {
+            const changes = JSON.parse(data.toString());
+            const newDoc = Automerge.applyChanges(doc, changes);
+            
+            // Check if changes need to be saved
+            const docChanges = Automerge.getChanges(doc, newDoc);
+            if (docChanges.length > 0) {
+                doc = newDoc;
+                saveDocument();
+                console.log('Updated document:', doc);
+            }
+        } catch (err) {
+            console.error('Error applying changes:', err);
+        }
+    });
+});
+
+// ==== APPEND NEW DATA ====
+// Modify the document and broadcast changes
+async function updateDocument(update) {
+    let newDoc = Automerge.change(doc, (d) => {
+        d.entries = d.entries || [];
+        d.entries.push(update);
+    });
+
+    // Check for changes before saving
+    const changes = Automerge.getChanges(doc, newDoc);
+    if (changes.length > 0) {
+        doc = newDoc;
+        await saveDocument();
+
+        // Broadcast changes to all connected peers
+        const msg = JSON.stringify(changes);
+        swarm.connections.forEach(conn => {
+            conn.write(msg);  // Broadcast to all peers
+        });
+
+        console.log('Appended update:', update);
+    }
+}
+
+// ==== TESTING ====
+// Load document, then append a test entry
+(async () => {
+    await loadDocument();
+    setTimeout(() => updateDocument({ user: 'Ben', action: 'Testing', timestamp: Date.now() }), 2000);
+})();
+
+```
+##LevelDB
 ```js
 const Automerge = require('automerge');
 const Hyperswarm = require('hyperswarm');
