@@ -11,7 +11,7 @@
 
 # Goal: Only use Hyperswarm to share and fs to store the autobase!
 
-[](https://www.percona.com/blog/wp-content/uploads/2015/10/12.jpg)
+![](https://www.percona.com/blog/wp-content/uploads/2015/10/12.jpg)
 ## RocksDB
 ```js
 const Automerge = require('automerge');
